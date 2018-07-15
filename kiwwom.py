@@ -15,16 +15,20 @@ class Hero(QAxWidget):
     def _set_signal_slot(self):
         self.OnEventConnect.connect(self.event_connect)
         
-    def comm_connect(self):
+    def comm_connect(self, callback):
         self.dynamicCall("CommConnect()")
         self.event_connect_loop = QEventLoop()
         self.event_connect_loop.exec_()
+        self.event_connect_callback = callback
 
     def event_connect(self, err_code):
         if err_code == 0:
             print("로그인 성공")
         else:
             print("로그인 실패")
+        if self.event_connect_callback:
+            self.event_connect_callback(err_code)
+            
         self.event_connect_loop.exit()
 
     def get_code_list_by_market(self, market):
