@@ -31,7 +31,7 @@
     <rect>
      <x>80</x>
      <y>50</y>
-     <width>113</width>
+     <width>91</width>
      <height>20</height>
     </rect>
    </property>
@@ -55,7 +55,7 @@
   <widget class="QPushButton" name="btOhlc">
    <property name="geometry">
     <rect>
-     <x>200</x>
+     <x>670</x>
      <y>50</y>
      <width>75</width>
      <height>23</height>
@@ -75,7 +75,156 @@
     </rect>
    </property>
   </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>240</x>
+     <y>52</y>
+     <width>56</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>시간단위</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="edTime">
+   <property name="geometry">
+    <rect>
+     <x>300</x>
+     <y>50</y>
+     <width>51</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>1</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>56</y>
+     <width>56</width>
+     <height>12</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>요청지점</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="edNext">
+   <property name="geometry">
+    <rect>
+     <x>490</x>
+     <y>50</y>
+     <width>161</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="cbItems">
+   <property name="geometry">
+    <rect>
+     <x>320</x>
+     <y>10</y>
+     <width>181</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>288</x>
+     <y>13</y>
+     <width>31</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>상품</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="cbCodes">
+   <property name="geometry">
+    <rect>
+     <x>550</x>
+     <y>10</y>
+     <width>141</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_5">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>13</y>
+     <width>31</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>코드</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="cbItemTypes">
+   <property name="geometry">
+    <rect>
+     <x>162</x>
+     <y>10</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_6">
+   <property name="geometry">
+    <rect>
+     <x>110</x>
+     <y>13</y>
+     <width>51</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>상품타입</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="cbUnit">
+   <property name="geometry">
+    <rect>
+     <x>360</x>
+     <y>50</y>
+     <width>51</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="ckConjunction">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>53</y>
+     <width>41</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>연결</string>
+   </property>
+  </widget>
  </widget>
+ <tabstops>
+  <tabstop>btConnect</tabstop>
+  <tabstop>edCode</tabstop>
+  <tabstop>edTime</tabstop>
+  <tabstop>edNext</tabstop>
+  <tabstop>btOhlc</tabstop>
+  <tabstop>tblOhlc</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
@@ -101,7 +250,7 @@
    <slot>ohlc_clicked()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>254</x>
+     <x>724</x>
      <y>62</y>
     </hint>
     <hint type="destinationlabel">
@@ -110,9 +259,94 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>cbItems</sender>
+   <signal>currentTextChanged(QString)</signal>
+   <receiver>Dialog</receiver>
+   <slot>items_text_changed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>358</x>
+     <y>16</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>550</x>
+     <y>9</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cbCodes</sender>
+   <signal>currentTextChanged(QString)</signal>
+   <receiver>Dialog</receiver>
+   <slot>codes_text_changed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>600</x>
+     <y>27</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>615</x>
+     <y>35</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cbItemTypes</sender>
+   <signal>currentIndexChanged(QString)</signal>
+   <receiver>Dialog</receiver>
+   <slot>item_types_text_changed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>213</x>
+     <y>26</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>297</x>
+     <y>41</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ckConjunction</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>Dialog</receiver>
+   <slot>conjunction_changed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>209</x>
+     <y>60</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>233</x>
+     <y>60</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>edCode</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>Dialog</receiver>
+   <slot>edit_code_changed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>136</x>
+     <y>61</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>11</x>
+     <y>50</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>connect_clicked()</slot>
   <slot>ohlc_clicked()</slot>
+  <slot>items_text_changed()</slot>
+  <slot>codes_text_changed()</slot>
+  <slot>item_types_text_changed()</slot>
+  <slot>conjunction_changed()</slot>
+  <slot>edit_code_changed()</slot>
  </slots>
 </ui>

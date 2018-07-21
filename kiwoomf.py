@@ -3,8 +3,6 @@ from PyQt5.QtWidgets import *
 from PyQt5.QAxContainer import *
 from PyQt5.QtCore import *
 
-TR_REQ_TIME_INTERVAL = 5
-
 trcode_map = {
     'opc10001': {
         'name': '해외선물옵션틱차트조회',
@@ -18,9 +16,15 @@ trcode_map = {
     },
     'opc10003': {
         'name': '해외선물옵션일차트조회',
-        'items': ['일자','시가','고가','저가','현재가','거래량','영업일자'],
+        'items': ['일자','시가','고가','저가','현재가','누적거래량','영업일자'],
         'keys': ['dt','open','high','low','close','volume','day']
     }
+}
+
+unit_map = {
+    'M': 'opc10002',
+    'T': 'opc10001',
+    'D': 'opc10003'
 }
 
 class KiwoomF(QAxWidget):
@@ -39,8 +43,8 @@ class KiwoomF(QAxWidget):
     def comm_connect(self, callback):
         self._event_connect_callback = callback
         self.dynamicCall("CommConnect(1)")
-        self.login_event_loop = QEventLoop()
-        self.login_event_loop.exec_()
+        # self.login_event_loop = QEventLoop()
+        # self.login_event_loop.exec_()
 
     def comm_terminate(self):
         self.dynamicCall("CommTerminate()")
@@ -59,25 +63,63 @@ class KiwoomF(QAxWidget):
 
         self._event_connect_callback(err_code)
         
-        self.login_event_loop.exit()
+        # self.login_event_loop.exit()
 
-    def get_future_item_list(self):
+    def get_future_code_info_map(self, item_type, callback):
+        print(item_type)
+        code_infos = self.dynamicCall("GetGlobalFutOpCodeInfoByType(int, QString)", 0, item_type)
+        code_info_map = self.make_code_info_map(code_infos)
+        callback(code_info_map)        
+
+    def make_code_info_list(self, code_infos):
+        n = 170
+        code_info_list = [code_infos[i:i+n] for i in range(0, len(code_infos), n)]
+        lengths = [12, 6, 40, 3, 3, 15, 15, 15, 15, 1, 15, 10, 8, 10, 1, 1]
+        results = []
+        for code_info in code_info_list:
+            start = 0
+            row = []
+            for l in lengths:
+                row.append(code_info[start:start+l].strip())
+                start += l
+            results.append(row)
+        return results
+
+    def make_code_info_map(self, code_infos):
+        code_info_list = self.make_code_info_list(code_infos)
+        code_info_map = {}
+        for code_info in code_info_list:
+            code = code_info[0][2:]
+            item = code_info[1]
+            item_name = code_info[2][:-7]
+            code_name = code_info[2][-6:-1]
+            recent = code_info[14]
+            active = code_info[15]
+            if item not in code_info_map:
+                code_info_map[item] = {'name': item_name, 'codes': []}
+            code_info_map[item]['codes'].append({'code': code, 'name': code_name + ("*" if active == '1' else '')})
+        return code_info_map
+
+
+    def get_future_item_list(self, callback):
         item_list = self.dynamicCall("GetGlobalFutureItemlist()")
-        print(item_list)
+        callback(item_list.split(';'))
 
-    def get_future_code_list(self, item):
+    def get_future_code_list(self, item, callback):
         code_list = self.dynamicCall("GetGlobalFutureCodelist(QString)", item)
-        print(code_list)
+        callback(code_list)
 
     def _set_input_value(self, id, value):
         self.dynamicCall("SetInputValue(QString, QString)", id, value)
 
     def _comm_rq_data(self, trcode, next):
         rqname = trcode
-        screen_no = trcode[-4:]
-        self.dynamicCall("CommRqData(QString, QString, int, QString)", rqname, trcode, next, screen_no)
-        self.tr_event_loop = QEventLoop()
-        self.tr_event_loop.exec_()
+        screen_no = trcode[-5:]
+        # print('CommRqData - rqname: {}, trcode: {}, next: {}, screen_no: {}'.format(rqname, trcode, next, screen_no))
+        response = self.dynamicCall("CommRqData(QString, QString, QString, QString)", rqname, trcode, next, screen_no)
+        # print('CommRqData - response: {}'.format(response))
+        # self.tr_event_loop = QEventLoop()
+        # self.tr_event_loop.exec_()
 
     def _get_comm_data(self, code, record_name, index, item_name):
         ret = self.dynamicCall("GetCommData(QString, QString, int, QString)", code,
@@ -89,18 +131,14 @@ class KiwoomF(QAxWidget):
         return ret
 
     def _receive_tr_data(self, screen_no, rqname, trcode, record_name, next):
-        if next == '2':
-            self.remained_data = True
-        else:
-            self.remained_data = False
-
+        # print('receive_tr_data - trcode: {}, rqname: {}, record_name: {}, next: {}'.format(trcode, rqname, record_name, next))
         data = self._read_tr_data(trcode, rqname)
-        self._receive_tr_data_callback(data)
-
-        try:
-            self.tr_event_loop.exit()
-        except AttributeError:
-            pass        
+        self._receive_tr_data_callback(data, next.strip())
+ 
+        # try:
+        #     self.tr_event_loop.exit()
+        # except AttributeError:
+        #     pass    
 
     def _read_tr_data(self, trcode, rqname):
         conf = trcode_map[trcode]
@@ -120,8 +158,14 @@ class KiwoomF(QAxWidget):
         return {}
 
 
-    def get_ohlc(self, code, callback):
+    def get_ohlc(self, code, time_unit, callback, next):
+        if len(time_unit) > 1:
+            time = int(time_unit[:-1])
+        unit = time_unit[-1:].upper()
         self._receive_tr_data_callback = callback
         self._set_input_value('종목코드', code)
-        self._set_input_value('시간단위', 60)
-        self._comm_rq_data('opc10002', '')
+        if unit == 'D':
+            self._set_input_value('조회일자', '')
+        else:
+            self._set_input_value('시간단위', time)
+        self._comm_rq_data(unit_map[unit], next)
