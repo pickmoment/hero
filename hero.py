@@ -54,21 +54,28 @@ class MainWindow(QDialog):
         self.session = Session()
         entity.Base.metadata.create_all(self.engine)
 
+    def ohlc_finished(self):
+        self.btOhlc.setStyleSheet("")
+        self.ohlc_timer.stop()
 
     def ohlc_timer_timeout(self):
         if (len(self.edNext.text()) > 10):
             self.api.get_ohlc(self.edCode.text(), self.get_time_unit(), self.ohlc_callback, self.edNext.text())
+        else:
+            self.ohlc_finished()
+
+    def get_code_text(self, code):
+        if self.ckConjunction.isChecked() and len(code) >= 2:
+            return code[:2] + '000'
+        return code
 
     @pyqtSlot()
     def conjunction_changed(self):
-        if self.ckConjunction.isChecked() and len(self.edCode.text()) >= 2:
-            self.edCode.setText(self.edCode.text()[:2] + '000')
-        else:
-            self.edCode.setText(self.get_code_only(self.cbCodes.currentText()))
+        self.edCode.setText(self.get_code_text(self.get_code_only(self.cbCodes.currentText())))
 
     @pyqtSlot()
     def codes_text_changed(self):
-        self.edCode.setText(self.get_code_only(self.cbCodes.currentText()))
+        self.edCode.setText(self.get_code_text(self.get_code_only(self.cbCodes.currentText())))
 
     def code_infos_callback(self, code_infos):
         self.code_info_map = code_infos
@@ -91,6 +98,9 @@ class MainWindow(QDialog):
     @pyqtSlot()
     def edit_code_changed(self):
         self.edNext.setText("")
+        if self.ohlc_timer.isActive():
+            self.btOhlc.setStyleSheet("")
+            self.ohlc_timer.stop()
 
     @pyqtSlot()
     def connect_clicked(self):
@@ -107,8 +117,7 @@ class MainWindow(QDialog):
     @pyqtSlot()
     def ohlc_clicked(self):
         if self.ohlc_timer.isActive():
-            self.btOhlc.setStyleSheet("")
-            self.ohlc_timer.stop()
+            self.ohlc_finished()
         else:
             self.btOhlc.setStyleSheet("background-color: green;")
             self.init_engine(self.edCode.text(), self.get_time_unit())

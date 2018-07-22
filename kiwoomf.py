@@ -66,7 +66,6 @@ class KiwoomF(QAxWidget):
         # self.login_event_loop.exit()
 
     def get_future_code_info_map(self, item_type, callback):
-        print(item_type)
         code_infos = self.dynamicCall("GetGlobalFutOpCodeInfoByType(int, QString)", 0, item_type)
         code_info_map = self.make_code_info_map(code_infos)
         callback(code_info_map)        
