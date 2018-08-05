@@ -10,7 +10,7 @@ Base = declarative_base()
 class Candle(Base):
     __tablename__ = 'candles'
 
-    dt = Column(DateTime, primary_key=True)
+    dt = Column(String, primary_key=True)
     open = Column(Numeric)
     high = Column(Numeric)
     low = Column(Numeric)
@@ -32,9 +32,5 @@ class Candle(Base):
         for row in dict_list:
             if len(row['dt']) == 0:
                 return
-            elif len(row['dt']) == 8:
-                dt = datetime.strptime(row['dt'], '%Y%m%d')
-            else:
-                dt = datetime.strptime(row['dt'], '%Y%m%d%H%M%S')
-            candle = Candle(dt, row['open'], row['high'], row['low'], row['close'], row['volume'], row['day'])
+            candle = Candle(row['dt'], row['open'], row['high'], row['low'], row['close'], row['volume'], row['day'])
             session.merge(candle)
