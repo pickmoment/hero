@@ -1,28 +1,37 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
+import yuanta
 
-import win32com.client
-
-api = win32com.client.Dispatch("YuantaAPICOM.YuantaAPI")
-URL = "simul.tradarglobal.api.com"
-Path = "C:/tools/YuantaAPI"
-result = api.YOA_Initial(URL, Path)
-print('init:', result)
-result = api.YOA_Login('moongux', 'gogo5', '')
-print(result)
+url = 'simul.tradarglobal.api.com'
+path = 'c:/tools/YuantaAPI'
 
 app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return "Hello"    
+    return "Hello"
 
-@app.route('/off')
-def off():
-    result = api.YOA_UnInitial()
-    return 'off: ' + str(result) 
+@app.route('/disconnect')
+def disconnect():
+    result = yuanta.disconnect()
+    return 'disconnect: ' + str(result) 
+
+@app.route('/accounts')
+def accounts():
+    result = yuanta.accounts()
+    return 'accounts: ' + str(result)
 
 @app.route("/codes")
 def codes():
-    count = api.YOA_GetCodeCount(2)
-    result = api.YOA_GetCodeInfoByIndex(2, 1, 1)
-    return str(result)
+    result = yuanta.codes()
+    return 'codes: ' + str(result)
+
+@app.route('/chart/<code>/<unit>')
+def chart(code, unit):
+    result = yuanta.chart(code, unit)
+    return jsonify(result)
+
+if __name__ == "__main__":
+    yuanta = yuanta.Session()
+    result = yuanta.connect(url, path)
+    result = yuanta.login('moongux', 'gogo5', '')
+    app.run()
