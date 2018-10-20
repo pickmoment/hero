@@ -18,6 +18,9 @@ DT_FORMAT = '%Y%m%d%H%M%S'
 DAY_FORMAT = '%Y%m%d'
 TIME_FORMAT = '%H%M%S'
 
+DEFAULT_URL = 'simul.tradarglobal.api.com'
+DEFAULT_PATH = 'c:/tools/YuantaAPI'
+
 def calculate_dt(basedate, basetime, unit):
     dt = basedate + basetime
     return dt
@@ -72,17 +75,17 @@ class SessionEventHandler:
         print('OnReceiveData', req_id, tr_id)
         if req_id not in self.query:
             self.query[req_id] = {}
-        self.query[req_id][tr_id] = self.process_data(req_id, tr_id)
-        print(self.query)
+        self.query[req_id]['data'] = self.process_data(req_id, tr_id)
+        # print(self.query)
         self.code = 0
         self.msg = None
 
     def OnReceiveRealData(self, req_id, auto_id):
         print('OnReceiveRealData', req_id, auto_id)
-        block = 'OutBlock1'
-        jongcode = self.YOA_GetTRFieldString(auto_id, block, 'jongcode', 0)
-        last = self.YOA_GetTRFieldString(auto_id, block, 'last', 0)
-        print('jongcode: {}, last: {}'.format(jongcode, last))
+        if req_id not in self.real:
+            self.real[req_id] = {}        
+        self.real[req_id]['data'] = self.process_current(auto_id)
+        print(self.real)
         self.code = 0
         self.msg = None
 
@@ -91,6 +94,13 @@ class SessionEventHandler:
 
     def process_data(self, req_id, tr_id):
         results = []
+
+        block = 'NextBlock1'
+        condate = self.YOA_GetTRFieldLong(tr_id, block, 'condate', 0)
+        contime = self.YOA_GetTRFieldLong(tr_id, block, 'contime', 0)
+        self.query[req_id]['condate'] = condate
+        self.query[req_id]['contime'] = contime
+
         block = 'MSG'
         self.YOA_SetTRInfo(tr_id, block)
         count = self.YOA_GetRowCount(tr_id, block)
@@ -114,6 +124,20 @@ class SessionEventHandler:
             })
         return results
 
+    def process_current(self, auto_id):
+        current = {}
+        block = 'OutBlock1'
+        string_cols = ('jongcode','filter','time2','time','hightime','lowtime','filter1','filter2')
+        double_cols = ('start','high','low','last','medoprice','mesuprice','changerate','change','startchange','highchange','lowchange','totmesuvol','totmedovol')
+        long_cols = ('openinterest','opendebi','volume','nowvol','pointsize','dispscale')
+
+        for c in string_cols:
+            current[c] = self.YOA_GetTRFieldString(auto_id, block, c, 0)
+        for c in double_cols:
+            current[c] = self.YOA_GetTRFieldDouble(auto_id, block, c, 0)
+        for c in long_cols:
+            current[c] = self.YOA_GetTRFieldLong(auto_id, block, c, 0)
+        return current
 
 class Session:
     def __init__(self):
@@ -135,7 +159,7 @@ class Session:
         self.waiting()
         return self.api.code
 
-    def connect(self, url, path):
+    def connect(self, url=DEFAULT_URL, path=DEFAULT_PATH):
         result = self.api.YOA_Initial(url, path)
         if result != 1000:
             raise Exception('연결 실패')
@@ -186,56 +210,98 @@ class Session:
         self.waiting()
         return self.get_query(req_id)
 
-    def set_query(self, req_id, tr_id, unit):
+    def set_query(self, req_id, tr_id, code, unit, release, enddate, endtime):
         if req_id not in self.api.query:
             self.api.query[req_id] = {}
-        self.api.query[req_id]['tr_id'] = tr_id
+        self.api.query[req_id]['req_id'] = req_id
+        self.api.query[req_id]['tr_id'] = tr_id     
+        self.api.query[req_id]['code'] = code     
         self.api.query[req_id]['unit'] = unit
+        self.api.query[req_id]['release'] = release
+        self.api.query[req_id]['enddate'] = enddate
+        self.api.query[req_id]['enddtime'] = endtime
 
     def get_query(self, req_id):
         req = self.api.query[req_id]
-        return req[req['tr_id']]
+        return req
 
-    def chart_call(self, code, unit):
+    def chart_call(self, code, unit, enddate='', endtime='', r_id=-1):
+        req_id = None
+        tr_id = None
         if unit == 'd':
-            return self.chart_day(code)
+            (req_id, tr_id) = self.chart_day(code, enddate, r_id)
         elif unit[:1] in ('m', 't'):
-            return self.chart_time(code, unit)
+            (req_id, tr_id) = self.chart_time(code, unit, enddate, endtime, r_id)
+        self.set_query(req_id, tr_id, code, unit, True, enddate, endtime)
+        return req_id
 
-    def chart_day(self, code):
+    def chart_day(self, code, enddate='', r_id=-1):
         tr_id = '820101'
         self.api.YOA_SetTRInfo(tr_id, "InBlock1")
         self.api.YOA_SetFieldString("jongcode", code, 0)
         self.api.YOA_SetFieldString("startdate", '', 0)
-        self.api.YOA_SetFieldString("enddata", '', 0)
+        self.api.YOA_SetFieldString("enddata", enddate, 0)
         self.api.YOA_SetFieldString("readcount", 500, 0)
         self.api.YOA_SetFieldString("link_yn", 'N', 0)
-        req_id = self.api.YOA_Request(tr_id, True, -1)
-        self.set_query(req_id, tr_id, 'd')
-        return req_id            
+        req_id = self.api.YOA_Request(tr_id, True, r_id)
+        return (req_id, tr_id)            
 
-    def chart_time(self, code, timeunit):
+    def chart_time(self, code, timeunit, enddate='', endtime='', r_id=-1):
         now = datetime.datetime.now()
+        if enddate == '':
+            enddate = now.strftime(DAY_FORMAT)
+        if endtime == '':
+            endtime = now.strftime(TIME_FORMAT)
+
         tr_id = '820104' if timeunit[:1] == 'm' else '820106'
         self.api.YOA_SetTRInfo(tr_id, "InBlock1")
         self.api.YOA_SetFieldString("jongcode", code, 0)
         self.api.YOA_SetFieldString("timeuint", timeunit[1:], 0)
         self.api.YOA_SetFieldString("startdate", '', 0)
         self.api.YOA_SetFieldString("starttime", '', 0)
-        self.api.YOA_SetFieldString("enddate", now.strftime(DAY_FORMAT), 0)
-        self.api.YOA_SetFieldString("endtime", now.strftime(TIME_FORMAT), 0)
+        self.api.YOA_SetFieldString("enddate", enddate, 0)
+        self.api.YOA_SetFieldString("endtime", endtime, 0)
         self.api.YOA_SetFieldString("readcount", 500, 0)
         self.api.YOA_SetFieldString("link_yn", 'N', 0)
-        req_id = self.api.YOA_Request(tr_id, True, -1)
-        self.set_query(req_id, tr_id, timeunit)
-        return req_id
+        req_id = self.api.YOA_Request(tr_id, False, r_id)
+        return (req_id, tr_id)
+
+    def chart_next(self, req_id):
+        req_id = int(req_id)
+        req = self.get_query(req_id)
+        return self.chart_call(req['code'], req['unit'], req['condate'], req['contime'], req_id)
+
+    def request(self, req_id):
+        req_id = int(req_id)
+        req = self.api.query[req_id]
+        ret = self.api.YOA_Request(req['tr_id'], False, req_id)
+        print(ret)
+        if ret <= 1000:
+            print('get_chart error', self.api.YOA_GetErrorMessage(self.api.YOA_GetLastError()))
+            return []
+        self.waiting()
+        return self.get_query(req_id)
+
+    def release(self, req_id):
+        req_id = int(req_id)
+        ret = self.api.YOA_ReleaseData(req_id)
+        if ret <= 1000:
+            print(self.api.YOA_GetErrorMessage(self.api.YOA_GetLastError()))
+        return ret
 
     def real_current(self, code):
         tr_id = '61'
         self.api.YOA_SetTRInfo(tr_id, "InBlock1")
         self.api.YOA_SetFieldString("jongcode", code, 0)
-        ret = self.api.YOA_RegistAuto(tr_id)
-        return ret
+        req_id = self.api.YOA_RegistAuto(tr_id)
+        self.set_real(req_id, tr_id, code)
+
+    def set_real(self, req_id, auto_id, code):
+        if req_id not in self.api.query:
+            self.api.real[req_id] = {}
+        self.api.real[req_id]['req_id'] = req_id
+        self.api.real[req_id]['auto_id'] = auto_id
+        self.api.real[req_id]['code'] = code
         
 if __name__ == '__main__':        
     url = 'simul.tradarglobal.api.com'
@@ -245,15 +311,15 @@ if __name__ == '__main__':
     session.connect(url, path)
     session.login('moongux', 'gogo5', '')
     # print(session.real_current('ECU18'))
-    # print(session.real_current('CLV18'))
-    # while True:
-    #     pythoncom.PumpWaitingMessages()
-    #     time.sleep(1)
+    print(session.real_current('CLV18'))
+    while True:
+        pythoncom.PumpWaitingMessages()
+        time.sleep(1)
     # accounts = session.get_accounts()
     # print(accounts)
     # codes = session.get_codes(2)
     # [(lambda c: print(c))(code) for code in codes]
     # print(codes)
-    session.chart('CLV18', 'd')
-    session.disconnect()
+    # session.chart('CLV18', 'd')
+    # session.disconnect()
     # session.clear()

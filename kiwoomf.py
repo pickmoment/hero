@@ -40,7 +40,7 @@ class KiwoomF(QAxWidget):
         self.OnEventConnect.connect(self._event_connect)
         self.OnReceiveTrData.connect(self._receive_tr_data)
         
-    def QtWidgets (self, callback):
+    def comm_connect(self, callback):
         self._event_connect_callback = callback
         self.dynamicCall("CommConnect(1)")
         # self.login_event_loop = QEventLoop()

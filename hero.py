@@ -49,7 +49,7 @@ class MainWindow(QDialog):
         self.cbItemTypes.addItems(item_types)
 
     def init_engine(self, code, time_unit):
-        self.engine = create_engine('sqlite:///db/{}_{}.db'.format(code.upper(), self.get_time_unit()))
+        self.engine = create_engine('firebird+fdb://moon:moongux@localhost/{}_{}.fdb'.format(code.upper(), self.get_time_unit()))
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
         entity.Base.metadata.create_all(self.engine)
