@@ -73,9 +73,7 @@ class SessionEventHandler:
 	
     def OnReceiveData(self, req_id, tr_id):
         print('OnReceiveData', req_id, tr_id)
-        if req_id not in self.query:
-            self.query[req_id] = {}
-        self.query[req_id]['data'] = self.process_data(req_id, tr_id)
+        self.query['data'] = self.process_data(req_id, tr_id)
         # print(self.query)
         self.code = 0
         self.msg = None
@@ -96,10 +94,10 @@ class SessionEventHandler:
         results = []
 
         block = 'NextBlock1'
-        condate = self.YOA_GetTRFieldLong(tr_id, block, 'condate', 0)
-        contime = self.YOA_GetTRFieldLong(tr_id, block, 'contime', 0)
-        self.query[req_id]['condate'] = condate
-        self.query[req_id]['contime'] = contime
+        condate = self.YOA_GetTRFieldString(tr_id, block, 'condate', 0)
+        contime = self.YOA_GetTRFieldString(tr_id, block, 'contime', 0)
+        self.query['condate'] = condate
+        self.query['contime'] = contime
 
         block = 'MSG'
         self.YOA_SetTRInfo(tr_id, block)
@@ -113,15 +111,16 @@ class SessionEventHandler:
             lastjuka = self.YOA_GetFieldDouble("lastjuka", i)
             volume = self.YOA_GetFieldDouble("volume", i)
             results.append({
-                'dt': calculate_dt(basedate, basetime, self.query[req_id]['unit']),
+                'dt': calculate_dt(basedate, basetime, self.query['unit']),
                 'open': startjuka,
                 'high': highjuka,
                 'low': lowjuka,
                 'close': lastjuka,
                 'volume': volume,
-                'dt_start': calculate_start(basedate, basetime, self.query[req_id]['unit']),
-                'day': calculate_day(basedate, basetime, self.query[req_id]['unit'])
+                'dt_start': calculate_start(basedate, basetime, self.query['unit']),
+                'day': calculate_day(basedate, basetime, self.query['unit'])
             })
+        # self.YOA_ReleaseData(req_id)
         return results
 
     def process_current(self, auto_id):
@@ -200,30 +199,27 @@ class Session:
 
         return codes
 
-    def chart(self, code, unit):
+    def chart(self, code, unit, enddate='', endtime=''):
         self.api.reset()
-        req_id = self.chart_call(code, unit)
+        req_id = self.chart_call(code, unit, enddate, endtime)
         print(req_id)
         if req_id <= 1000:
             print('get_chart error', self.api.YOA_GetErrorMessage(self.api.YOA_GetLastError()))
             return []
         self.waiting()
-        return self.get_query(req_id)
+        return self.get_query()
 
     def set_query(self, req_id, tr_id, code, unit, release, enddate, endtime):
-        if req_id not in self.api.query:
-            self.api.query[req_id] = {}
-        self.api.query[req_id]['req_id'] = req_id
-        self.api.query[req_id]['tr_id'] = tr_id     
-        self.api.query[req_id]['code'] = code     
-        self.api.query[req_id]['unit'] = unit
-        self.api.query[req_id]['release'] = release
-        self.api.query[req_id]['enddate'] = enddate
-        self.api.query[req_id]['enddtime'] = endtime
+        self.api.query['req_id'] = req_id
+        self.api.query['tr_id'] = tr_id     
+        self.api.query['code'] = code     
+        self.api.query['unit'] = unit
+        self.api.query['release'] = release
+        self.api.query['enddate'] = enddate
+        self.api.query['enddtime'] = endtime
 
-    def get_query(self, req_id):
-        req = self.api.query[req_id]
-        return req
+    def get_query(self):
+        return self.api.query
 
     def chart_call(self, code, unit, enddate='', endtime='', r_id=-1):
         req_id = None
@@ -263,13 +259,20 @@ class Session:
         self.api.YOA_SetFieldString("endtime", endtime, 0)
         self.api.YOA_SetFieldString("readcount", 500, 0)
         self.api.YOA_SetFieldString("link_yn", 'N', 0)
-        req_id = self.api.YOA_Request(tr_id, False, r_id)
+        req_id = self.api.YOA_Request(tr_id, True, r_id)
         return (req_id, tr_id)
 
     def chart_next(self, req_id):
+        self.api.reset()
         req_id = int(req_id)
         req = self.get_query(req_id)
-        return self.chart_call(req['code'], req['unit'], req['condate'], req['contime'], req_id)
+        req_id = self.chart_call(req['code'], req['unit'], req['condate'], req['contime'])
+        print(req_id)
+        if req_id <= 1000:
+            print('get_chart error', self.api.YOA_GetErrorMessage(self.api.YOA_GetLastError()))
+            return []
+        self.waiting()
+        return self.get_query()
 
     def request(self, req_id):
         req_id = int(req_id)

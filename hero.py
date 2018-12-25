@@ -9,9 +9,10 @@ from PyQt5.QtCore import QTimer
 import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import func
 
 import kiwoomf
-import entity
+import db.entity
 
 unit_map = {'분':'M', '틱':'T', '일':'D'}
 
@@ -26,13 +27,18 @@ class MainWindow(QDialog):
         self.ohlc_table_model = BaseTableModel(self, self.ohlc_data_list, self.ohlc_table_header)
         self.tblOhlc.setModel(self.ohlc_table_model)
 
+        self.dt_max = None
         self.ohlc_next = ''
         self.ohlc_timer = QTimer(self)
         self.ohlc_timer.timeout.connect(self.ohlc_timer_timeout)
 
+        self.monitor_timer = QTimer(self)
+        self.monitor_timer.timeout.connect(self.monitor_timer_timeout)
+
         self.cbUnit.addItems(list(unit_map.keys()))
 
         self.code_info_map = {}
+
 
     def get_time_unit(self):
         unit = unit_map[self.cbUnit.currentText()]
@@ -49,10 +55,13 @@ class MainWindow(QDialog):
         self.cbItemTypes.addItems(item_types)
 
     def init_engine(self, code, time_unit):
-        self.engine = create_engine('firebird+fdb://moon:moongux@localhost/{}_{}.fdb'.format(code.upper(), self.get_time_unit()))
+        self.engine = create_engine('sqlite:///db/{}_{}.db'.format(code.upper(), self.get_time_unit()))
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
-        entity.Base.metadata.create_all(self.engine)
+        db.entity.Base.metadata.create_all(self.engine)
+        self.dt_max = self.session.query(func.max(db.entity.Candle.dt)).one()[0]
+        print('dt_max:', self.dt_max)
+
 
     def ohlc_finished(self):
         self.btOhlc.setStyleSheet("")
@@ -63,6 +72,13 @@ class MainWindow(QDialog):
             self.api.get_ohlc(self.edCode.text(), self.get_time_unit(), self.ohlc_callback, self.edNext.text())
         else:
             self.ohlc_finished()
+
+    def monitor_finished(self):
+        self.btMonitor.setStyleSheet("")
+        self.monitor_timer.stop()
+
+    def monitor_timer_timeout(self):
+        self.monitor()
 
     def get_code_text(self, code):
         if self.ckConjunction.isChecked() and len(code) >= 2:
@@ -125,16 +141,33 @@ class MainWindow(QDialog):
             self.ohlc_timer.start(200)
 
 
-    def ohlc_callback(self, result, next):
+    def ohlc_callback(self, result, next, code_timeunit):
         self.ohlc_data_list = [list(r.values()) for r in result]
         self.ohlc_table_model = BaseTableModel(self, self.ohlc_data_list, self.ohlc_table_header)
         self.tblOhlc.setModel(self.ohlc_table_model)
-        entity.Candle.add_list(self.session, result)
+        db.entity.Candle.add_list(self.session, result)
         self.session.commit()
 
-        self.edNext.setText(next)
+        if self.dt_max and self.dt_max > result[len(result)-1]['dt']:
+            self.edNext.setText('')
+        else:
+            self.edNext.setText(next)
 
+    @pyqtSlot()
+    def monitor_clicked(self):
+        if self.monitor_timer.isActive():
+            self.monitor_finished()
+        else:
+            self.btMonitor.setStyleSheet("background-color: green;")
+            self.monitor_timer.start(int(self.edMonitorPeriod.text()) * 1000)
 
+    def monitor_callback(self, result, next, code_timeunit): 
+        print(code_timeunit, len(result), result[0])
+
+    def monitor(self):
+        codes = self.edMonitorCodes.text().split(",")
+        for code in codes:
+            self.api.get_ohlc(code, '1M', self.monitor_callback, '')
 
 class BaseTableModel(QAbstractTableModel):
     def __init__(self, parent, rows, header, *args):

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>768</width>
-    <height>461</height>
+    <height>510</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -216,6 +216,71 @@
     <string>연결</string>
    </property>
   </widget>
+  <widget class="QLabel" name="label_7">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>470</y>
+     <width>56</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>종목코드</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="edMonitorCodes">
+   <property name="geometry">
+    <rect>
+     <x>80</x>
+     <y>470</y>
+     <width>201</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_8">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>470</y>
+     <width>56</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>주기(sec)</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="edMonitorPeriod">
+   <property name="geometry">
+    <rect>
+     <x>370</x>
+     <y>470</y>
+     <width>51</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>60</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btMonitor">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>470</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Monitor</string>
+   </property>
+  </widget>
  </widget>
  <tabstops>
   <tabstop>btConnect</tabstop>
@@ -339,6 +404,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btMonitor</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>monitor_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>492</x>
+     <y>477</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>646</x>
+     <y>472</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>connect_clicked()</slot>
@@ -348,5 +429,6 @@
   <slot>item_types_text_changed()</slot>
   <slot>conjunction_changed()</slot>
   <slot>edit_code_changed()</slot>
+  <slot>monitor_clicked()</slot>
  </slots>
 </ui>

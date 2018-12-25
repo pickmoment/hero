@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify
+from flask import request as req
 import yuanta
 
 url = 'simul.tradarglobal.api.com'
@@ -25,9 +26,12 @@ def codes():
     result = yuanta.codes()
     return jsonify(result)
 
-@app.route('/chart/<code>/<unit>')
+@app.route('/chart/<code>/<unit>', methods=['GET'])
 def chart(code, unit):
-    result = yuanta.chart(code, unit, False)
+    enddate = req.args.get('enddate')
+    endtime = req.args.get('endtime')
+    print('enddate:', enddate, 'endtime:', endtime)
+    result = yuanta.chart(code, unit, enddate, endtime)
     return jsonify(result)
 
 @app.route('/request/<req_id>')

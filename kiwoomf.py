@@ -111,8 +111,8 @@ class KiwoomF(QAxWidget):
     def _set_input_value(self, id, value):
         self.dynamicCall("SetInputValue(QString, QString)", id, value)
 
-    def _comm_rq_data(self, trcode, next):
-        rqname = trcode
+    def _comm_rq_data(self, trcode, next, code_timeunit):
+        rqname = code_timeunit #trcode
         screen_no = trcode[-5:]
         # print('CommRqData - rqname: {}, trcode: {}, next: {}, screen_no: {}'.format(rqname, trcode, next, screen_no))
         response = self.dynamicCall("CommRqData(QString, QString, QString, QString)", rqname, trcode, next, screen_no)
@@ -132,7 +132,7 @@ class KiwoomF(QAxWidget):
     def _receive_tr_data(self, screen_no, rqname, trcode, record_name, next):
         # print('receive_tr_data - trcode: {}, rqname: {}, record_name: {}, next: {}'.format(trcode, rqname, record_name, next))
         data = self._read_tr_data(trcode, rqname)
-        self._receive_tr_data_callback(data, next.strip())
+        self._receive_tr_data_callback(data, next.strip(), rqname)
  
         # try:
         #     self.tr_event_loop.exit()
@@ -167,4 +167,4 @@ class KiwoomF(QAxWidget):
             self._set_input_value('조회일자', '')
         else:
             self._set_input_value('시간단위', time)
-        self._comm_rq_data(unit_map[unit], next)
+        self._comm_rq_data(unit_map[unit], next, code+'/'+time_unit)
