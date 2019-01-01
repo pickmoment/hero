@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>768</width>
-    <height>510</height>
+    <width>957</width>
+    <height>502</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -55,7 +55,7 @@
   <widget class="QPushButton" name="btOhlc">
    <property name="geometry">
     <rect>
-     <x>670</x>
+     <x>870</x>
      <y>50</y>
      <width>75</width>
      <height>23</height>
@@ -70,7 +70,7 @@
     <rect>
      <x>20</x>
      <y>80</y>
-     <width>731</width>
+     <width>921</width>
      <height>371</height>
     </rect>
    </property>
@@ -117,7 +117,7 @@
   <widget class="QLineEdit" name="edNext">
    <property name="geometry">
     <rect>
-     <x>490</x>
+     <x>480</x>
      <y>50</y>
      <width>161</width>
      <height>20</height>
@@ -279,6 +279,29 @@
    </property>
    <property name="text">
     <string>Monitor</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_9">
+   <property name="geometry">
+    <rect>
+     <x>661</x>
+     <y>51</y>
+     <width>56</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>종료지점</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="edLast">
+   <property name="geometry">
+    <rect>
+     <x>710</x>
+     <y>50</y>
+     <width>141</width>
+     <height>20</height>
+    </rect>
    </property>
   </widget>
  </widget>

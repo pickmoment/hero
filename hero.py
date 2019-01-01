@@ -148,7 +148,7 @@ class MainWindow(QDialog):
         db.entity.Candle.add_list(self.session, result)
         self.session.commit()
 
-        if self.dt_max and self.dt_max > result[len(result)-1]['dt']:
+        if self.edLast.text() and self.edLast.text() > result[len(result)-1]['dt']:
             self.edNext.setText('')
         else:
             self.edNext.setText(next)
