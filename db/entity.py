@@ -16,7 +16,7 @@ class Candle(Base):
     low = Column(Numeric)
     close = Column(Numeric)
     volume = Column(Numeric)
-    day = Column(String)
+    day = Column(String, index=True)
 
     def __init__(self, dt, open, high, low, close, volume, day):
         self.dt = dt

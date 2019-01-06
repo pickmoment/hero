@@ -27,7 +27,7 @@ class MainWindow(QDialog):
         self.ohlc_table_model = BaseTableModel(self, self.ohlc_data_list, self.ohlc_table_header)
         self.tblOhlc.setModel(self.ohlc_table_model)
 
-        self.dt_max = None
+        # self.dt_max = None
         self.ohlc_next = ''
         self.ohlc_timer = QTimer(self)
         self.ohlc_timer.timeout.connect(self.ohlc_timer_timeout)
@@ -59,8 +59,8 @@ class MainWindow(QDialog):
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
         db.entity.Base.metadata.create_all(self.engine)
-        self.dt_max = self.session.query(func.max(db.entity.Candle.dt)).one()[0]
-        print('dt_max:', self.dt_max)
+        # self.dt_max = self.session.query(func.max(db.entity.Candle.dt)).one()[0]
+        # print('dt_max:', self.dt_max)
 
 
     def ohlc_finished(self):
