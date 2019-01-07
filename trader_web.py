@@ -44,6 +44,16 @@ def release(req_id):
     result = yuanta.release(req_id)
     return jsonify(result)
 
+@app.route('/real/<code>')
+def real(code):
+    result = yuanta.real_current(code)
+    return jsonify({'code': code})
+
+@app.route('/check')
+def check():
+    result = yuanta.check()
+    return jsonify(result)
+
 if __name__ == "__main__":
     yuanta = yuanta.Session()
     result = yuanta.connect(url, path)

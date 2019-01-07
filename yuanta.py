@@ -221,6 +221,9 @@ class Session:
     def get_query(self):
         return self.api.query
 
+    def get_real(self):
+        return self.api.real
+
     def chart_call(self, code, unit, enddate='', endtime='', r_id=-1):
         req_id = None
         tr_id = None
@@ -305,6 +308,10 @@ class Session:
         self.api.real[req_id]['req_id'] = req_id
         self.api.real[req_id]['auto_id'] = auto_id
         self.api.real[req_id]['code'] = code
+
+    def check(self):
+        pythoncom.PumpWaitingMessages()
+        return self.get_real()
         
 if __name__ == '__main__':        
     url = 'simul.tradarglobal.api.com'
@@ -314,7 +321,7 @@ if __name__ == '__main__':
     session.connect(url, path)
     session.login('moongux', 'gogo5', '')
     # print(session.real_current('ECU18'))
-    print(session.real_current('CLV18'))
+    print(session.real_current('CLG19'))
     while True:
         pythoncom.PumpWaitingMessages()
         time.sleep(1)
